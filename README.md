@@ -148,9 +148,9 @@ set_var EASYRSA_DN "org"
 set_var EASYRSA_REQ_COUNTRY "CN"
 set_var EASYRSA_REQ_PROVINCE "Beijing"
 set_var EASYRSA_REQ_CITY "Beijing"
-set_var EASYRSA_REQ_ORG "WDPCA"
-set_var EASYRSA_REQ_EMAIL "wdp137@gmail.com"
-set_var EASYRSA_REQ_OU  "WDPHOME"
+set_var EASYRSA_REQ_ORG "unknown"
+set_var EASYRSA_REQ_EMAIL "unknown@mail.com"
+set_var EASYRSA_REQ_OU  "unknown"
 ```
 
 ### Create certificate
