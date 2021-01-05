@@ -1,0 +1,17 @@
+client
+dev tun-home
+proto tcp
+remote <serverip> 1199
+resolv-retry infinite
+nobind
+persist-key
+persist-tun
+compress lzo
+
+cipher AES-256-GCM
+auth SHA512
+tls-version-min 1.2
+tls-cipher TLS-DHE-RSA-WITH-AES-256-GCM-SHA384
+
+mssfix 1400
+verb 3
