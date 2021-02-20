@@ -131,7 +131,7 @@ fi
 ### install easy-rsa
 
 ```shell
-cp -r /usr/share/easy-rsa/ /etc/openvpn/
+ln -s /usr/share/easy-rsa/ /etc/openvpn/easy-rsa
 ```
 
 ### Prepare env vars file
@@ -166,15 +166,13 @@ CA
 Server
 
 ```shell
-./easyrsa gen-req wdphomevpn nopass
-./easyrsa sign-req server wdphomevpn
+./easyrsa build-server-full wdphomevpn nopass
 ```
 
 User
 
 ```shell
-./easyrsa gen-req wdphomevpn-dapeng-internal nopass
-./easyrsa sign-req client wdphomevpn-dapeng-internal
+./easyrsa build-client-full wdphomevpn-dapeng-internal nopass
 ```
 
 ## Create OpenVPN Server configuration
@@ -184,6 +182,8 @@ User
 ```shell
 cd /etc/openvpn
 mkdir {ccd,rules,logs}
+touch /etc/openvpn/logs/openvpn-status.log
+touch /etc/openvpn/logs/openvpn.log
 ```
 
 ### Create Server configuration
@@ -247,6 +247,7 @@ format below:
 +10.241.12.2/32
 [END]
 ```
+
 ACCEPT or DROP is the default policy, control the user can connect other clients or subnets.
 Then you can add other rules for allow list(+) or deny list(-).
 

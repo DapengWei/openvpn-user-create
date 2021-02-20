@@ -17,20 +17,20 @@ PF_FILE = os.path.join(CURRENT_DIR, "ovpn_pf.csv")
 
 
 def create_key(user_name):
-    pki_cmd = "bash -c " + "'" + os.path.join(CURRENT_DIR, "pki_cmd.sh") + " " + KEYTOOL_DIR + " " + NAME_PREFIX + user_name + "'"
-    print pki_cmd
+    pki_cmd = "bash -c " + "'" + os.path.join(CURRENT_DIR, "pki_cmd.sh") + " " + KEYTOOL_DIR + " " + user_name + "'"
+    print(pki_cmd)
     subprocess.call(pki_cmd, shell=True)
 
 
 def create_conf(user_name):
-    with file(os.path.join(OVPNCFG_DIR, NAME_PREFIX + user_name + ".ovpn"), "w") as cfg_file:
-        for line in file(OVPN_TP):
+    with open(os.path.join(OVPNCFG_DIR, user_name + ".ovpn"), "w") as cfg_file:
+        for line in open(OVPN_TP):
             cfg_file.write(line)
 
-        cfg_file.write("<cert>" + "\n")
-        user_crt = os.path.join(KEY_DIR, "issued", NAME_PREFIX + user_name + ".crt")
+        cfg_file.write("\n" + "<cert>" + "\n")
+        user_crt = os.path.join(KEY_DIR, "issued", user_name + ".crt")
         write_flag = 0
-        for line in file(user_crt):
+        for line in open(user_crt):
             if re.match("-----BEGIN CERTIFICATE-----", line):
                 write_flag = 1
             if write_flag == 1:
@@ -38,9 +38,9 @@ def create_conf(user_name):
         cfg_file.write("</cert>" + "\n")
 
         cfg_file.write("<key>" + "\n")
-        user_key = os.path.join(KEY_DIR, "private", NAME_PREFIX + user_name + ".key")
+        user_key = os.path.join(KEY_DIR, "private", user_name + ".key")
         write_flag = 0
-        for line in file(user_key):
+        for line in open(user_key):
             if re.match("-----BEGIN PRIVATE KEY-----", line):
                 write_flag = 1
             if write_flag == 1:
@@ -50,20 +50,19 @@ def create_conf(user_name):
         cfg_file.write("<ca>" + "\n")
         ca_file = os.path.join(KEY_DIR, "ca.crt")
         write_flag = 0
-        for line in file(ca_file):
+        for line in open(ca_file):
             if re.match("-----BEGIN CERTIFICATE-----", line):
                 write_flag = 1
             if write_flag == 1:
                 cfg_file.write(line)
         cfg_file.write("</ca>" + "\n")
 
-
 def create_pf(user_name, user_dept):
-    create_pf_cmd = "cp -r " + os.path.join(PFTP_DIR, user_dept + ".pf") + " " + os.path.join(PF_DIR, NAME_PREFIX + user_name + ".pf")
-    print create_pf_cmd
+    create_pf_cmd = "cp -r " + os.path.join(PFTP_DIR, user_dept + ".pf") + " " + os.path.join(PF_DIR, user_name + ".pf")
+    print(create_pf_cmd)
     subprocess.call(create_pf_cmd, shell=True)
-    with file(PF_FILE, "a") as ovpn_file:
-        write_cache = NAME_PREFIX + user_name + "," + user_dept + "\n"
+    with open(PF_FILE, "a") as ovpn_file:
+        write_cache = user_name + "," + user_dept + "\n"
         ovpn_file.write(write_cache)
 
 
@@ -76,28 +75,28 @@ def main():
 
     for op, value in opts:
         if op == "-n":
-            user_name = value
+            user_name = NAME_PREFIX + value
         if op == "-d":
             if value in pftp_list:
                 user_dept = value
             else:
-                print "group error:",
+                print("group error:",end='')
                 for i in pftp_list:
-                    print i,
-                print ""
+                    print(i + ',',end='')
+                print("")
                 sys.exit()
         if op == "-h":
-            print "create_openvpn.py -n <name> -d <group>"
+            print("create_openvpn.py -n <name> -d <group>")
             sys.exit()
 
     create_key(user_name)
-    print "create user private key finished!"
+    print("create user private key finished!")
 
     create_conf(user_name)
-    print "create user cfg file finished!"
+    print("create user cfg file finished!")
 
     create_pf(user_name, user_dept)
-    print "create pf cfg file finished!"
+    print("create pf cfg file finished!")
 
 if __name__ == "__main__":
     main()

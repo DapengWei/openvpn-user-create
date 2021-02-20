@@ -1,4 +1,3 @@
 cd $1
-source ./vars
-./easyrsa gen-req $2 nopass
-./easyrsa sign-req client $2
+./easyrsa build-client-full $2 nopass
+
