@@ -199,6 +199,7 @@ cert /etc/openvpn/easy-rsa/pki/issued/wdphomevpn.crt
 key /etc/openvpn/easy-rsa/pki/private/wdphomevpn.key
 dh /etc/openvpn/easy-rsa/pki/dh.pem
 server 10.240.0.0 255.255.255.0
+topology subnet
 ifconfig-pool-persist  /etc/openvpn/ipp.txt
 client-config-dir  /etc/openvpn/ccd
 
@@ -209,6 +210,9 @@ keepalive 10 120
 compress lzo
 persist-key
 persist-tun
+#One cert can be used by more than one connection/users.
+#duplicate-cn
+client-to-client
 push "route 10.240.0.0 255.255.255.0"
 
 cipher AES-256-GCM
