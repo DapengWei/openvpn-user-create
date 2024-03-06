@@ -12,21 +12,6 @@ Install packages:
 apt install openvpn easy-rsa build-essential
 ```
 
-## Install packge filter module
-
-Reference link: <http://backreference.org/2010/06/18/openvpns-built-in-packet-filter/>
-
-### Download  OpenVPN source code
-
-``` shell
-apt install libssl-dev liblzo2-dev libpam0g-dev autoconf libtool automake
-cd /usr/local/src/
-wget https://swupdate.openvpn.org/community/releases/openvpn-2.3.11.zip # change this for your openvpn version
-cd openvpn-2.3.11/
-touch minimal_pf.c
-autoreconf -vi
-./configure
-```
 ## Create server certificate
 
 ### install easy-rsa
