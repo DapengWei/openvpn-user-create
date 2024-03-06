@@ -10,14 +10,13 @@ OVPN_TP = os.path.join(CURRENT_DIR, "client.tp")
 KEYTOOL_DIR = "/etc/openvpn/easy-rsa/"
 KEY_DIR = os.path.join(KEYTOOL_DIR, "pki")
 OVPNCFG_DIR = os.path.join(CURRENT_DIR, "ovpn")
-PFTP_DIR = os.path.join(CURRENT_DIR, "template")
-PF_DIR = "/etc/openvpn/rules"
 NAME_PREFIX = ""
-PF_FILE = os.path.join(CURRENT_DIR, "ovpn_pf.csv")
 
 
 def create_key(user_name):
-    pki_cmd = "bash -c " + "'" + os.path.join(CURRENT_DIR, "pki_cmd.sh") + " " + KEYTOOL_DIR + " " + user_name + "'"
+    pki_cmd = "bash -c " + "'" + \
+        os.path.join(CURRENT_DIR, "pki_cmd.sh") + " " + \
+        KEYTOOL_DIR + " " + user_name + "'"
     print(pki_cmd)
     subprocess.call(pki_cmd, shell=True)
 
@@ -57,36 +56,14 @@ def create_conf(user_name):
                 cfg_file.write(line)
         cfg_file.write("</ca>" + "\n")
 
-def create_pf(user_name, user_dept):
-    create_pf_cmd = "cp -r " + os.path.join(PFTP_DIR, user_dept + ".pf") + " " + os.path.join(PF_DIR, user_name + ".pf")
-    print(create_pf_cmd)
-    subprocess.call(create_pf_cmd, shell=True)
-    with open(PF_FILE, "a") as ovpn_file:
-        write_cache = user_name + "," + user_dept + "\n"
-        ovpn_file.write(write_cache)
-
-
 def main():
-    opts, args = getopt.getopt(sys.argv[1:], "n:d:h")
-
-    pftp_dirs = os.walk(PFTP_DIR)
-    for root, dirs, files in pftp_dirs:
-        pftp_list = [i.split(".")[0] for i in files]
+    opts, args = getopt.getopt(sys.argv[1:], "n:h")
 
     for op, value in opts:
         if op == "-n":
             user_name = NAME_PREFIX + value
-        if op == "-d":
-            if value in pftp_list:
-                user_dept = value
-            else:
-                print("group error:",end='')
-                for i in pftp_list:
-                    print(i + ',',end='')
-                print("")
-                sys.exit()
         if op == "-h":
-            print("create_openvpn.py -n <name> -d <group>")
+            print("create_openvpn.py -n <name>")
             sys.exit()
 
     create_key(user_name)
@@ -94,9 +71,6 @@ def main():
 
     create_conf(user_name)
     print("create user cfg file finished!")
-
-    create_pf(user_name, user_dept)
-    print("create pf cfg file finished!")
 
 if __name__ == "__main__":
     main()

@@ -1,6 +1,5 @@
 
-# A tutorial for building a certificate authentication  OpenVPN server with packet filter
-
+# A tutorial for building a certificate authentication  OpenVPN server and creating user profile
 ----------
 
 ## Install  OpenVPN
@@ -10,7 +9,7 @@ Server: Ubuntu 20.04 LTS
 Install packages:
 
 ```shell
-apt install openvpn unzip gcc easy-rsa build-essential
+apt install openvpn easy-rsa build-essential
 ```
 
 ## Install packge filter module
@@ -28,104 +27,6 @@ touch minimal_pf.c
 autoreconf -vi
 ./configure
 ```
-
-### Build minimal pf
-
-minimal\_pf.c:
-
-```c
-/* minimal_pf.c 
- * ultra-minimal OpenVPN plugin to enable internal packet filter */
-#include <stdio.h>
-#include <stdlib.h>
-
-#include "include/openvpn-plugin.h"
-
-/* dummy context, as we need no state */
-struct plugin_context {
-  int dummy;
-};
-
-/* Initialization function */
-OPENVPN_EXPORT openvpn_plugin_handle_t openvpn_plugin_open_v1 (unsigned int *type_mask, const char *argv[], const char *envp[]) {
-  struct plugin_context *context;
-  /* Allocate our context */
-  context = (struct plugin_context *) calloc (1, sizeof (struct plugin_context));
-
-  /* Which callbacks to intercept. */
-  *type_mask = OPENVPN_PLUGIN_MASK (OPENVPN_PLUGIN_ENABLE_PF);
-
-  return (openvpn_plugin_handle_t) context;
-}
-
-/* Worker function */
-OPENVPN_EXPORT int openvpn_plugin_func_v2 (openvpn_plugin_handle_t handle,
-            const int type,
-            const char *argv[],
-            const char *envp[],
-            void *per_client_context,
-            struct openvpn_plugin_string_list **return_list) {
-  
-  if (type == OPENVPN_PLUGIN_ENABLE_PF) {
-    return OPENVPN_PLUGIN_FUNC_SUCCESS;
-  } else {
-    /* should not happen! */
-    return OPENVPN_PLUGIN_FUNC_ERROR;
-  }
-}
-
-/* Cleanup function */
-OPENVPN_EXPORT void openvpn_plugin_close_v1 (openvpn_plugin_handle_t handle) {
-  struct plugin_context *context = (struct plugin_context *) handle;
-  free (context);
-}
-```
-
-Prepare build script:
-
-build.sh:
-
-```shell
-INCLUDE="-I/usr/local/src/openvpn-2.3.11"         # CHANGE THIS!!!!
-CC_FLAGS="-O2 -Wall -g"
-NAME=minimal_pf
-gcc $CC_FLAGS -fPIC -c $INCLUDE $NAME.c && \
-gcc $CC_FLAGS -fPIC -shared -Wl,-soname,$NAME.so -o $NAME.so $NAME.o -lc
-```
-
-compile and install:
-
-```shell
-bash ./build.sh
-cp minimal_pf.so /etc/openvpn
-```
-
-### Create client-connect.sh script
-
-```shell
-cd /etc/openvpn
-touch client-connect.sh
-```
-
-client-connect.sh:
-
-```shell
-#!/bin/sh
-
-# /etc/openvpn/client-connect.sh: sample client-connect script using pf rule files
-
-# rules template file
-template="/etc/openvpn/rules/${common_name}.pf"
-
-# create the file OpenVPN wants with the rules for this client
-if [ -f "$template" ] && [ ! -z "$pf_file" ]; then
-  cp -- "$template" "$pf_file"
-else
-  # if anything is not as expected, fail
-  exit 1
-fi
-```
-
 ## Create server certificate
 
 ### install easy-rsa
@@ -181,14 +82,14 @@ User
 
 ```shell
 cd /etc/openvpn
-mkdir {ccd,rules,logs}
+mkdir {ccd,logs}
 touch /etc/openvpn/logs/openvpn-status.log
 touch /etc/openvpn/logs/openvpn.log
 ```
 
 ### Create Server configuration
 
-wdphomevpn.conf:
+/etc/openvpn/server/wdphomevpn.conf:
 
 ```shell
 port 1199
@@ -198,22 +99,24 @@ ca /etc/openvpn/easy-rsa/pki/ca.crt
 cert /etc/openvpn/easy-rsa/pki/issued/wdphomevpn.crt
 key /etc/openvpn/easy-rsa/pki/private/wdphomevpn.key
 dh /etc/openvpn/easy-rsa/pki/dh.pem
-server 10.240.0.0 255.255.255.0
+server 10.242.0.0 255.255.255.0
 topology subnet
 ifconfig-pool-persist  /etc/openvpn/ipp.txt
 client-config-dir  /etc/openvpn/ccd
 
-#If you revoke some user certificate, uncomment this
+# If you revoke some user certificate, uncomment this
 ;crl-verify /etc/openvpn/easy-rsa/pki/revoked/certs_by_serial/crl.pem
 
 keepalive 10 120
-compress lzo
 persist-key
 persist-tun
-#One cert can be used by more than one connection/users.
-#duplicate-cn
+
+# One cert can be used by more than one connection/users.
+duplicate-cn
+
 client-to-client
-push "route 10.240.0.0 255.255.255.0"
+# Add your route here, uncomment
+;push "route 10.241.0.0 255.255.0.0"
 
 cipher AES-256-GCM
 auth SHA512
@@ -224,36 +127,7 @@ status /etc/openvpn/logs/openvpn-status.log
 log-append  /etc/openvpn/logs/openvpn.log
 
 verb 3
-
-#configuration for minimal pf
-plugin /etc/openvpn/minimal_pf.so
-client-connect /etc/openvpn/client-connect.sh
-script-security 3
 ```
-
-## Create minimal pf rule for user
-
-```shell
-cd /etc/openvpn/rules
-```
-
-Use the same name for rule file and vpn name.
-
-```shell
-touch wdphomevpn-dapeng-internal.pf
-```
-
-format below:
-
-```shell
-[CLIENTS ACCEPT]
-[SUBNETS DROP]
-+10.241.12.2/32
-[END]
-```
-
-ACCEPT or DROP is the default policy, control the user can connect other clients or subnets.
-Then you can add other rules for allow list(+) or deny list(-).
 
 ## add iptables NAT rule
 
@@ -274,14 +148,13 @@ wdphomevpn-dapeng-internal.ovpn:
 
 ```shell
 client
-dev tun-home
+dev tun-client
 proto tcp
 remote <serverip> 1199
 resolv-retry infinite
 nobind
 persist-key
 persist-tun
-compress lzo
 
 cipher AES-256-GCM
 auth SHA512
@@ -306,10 +179,8 @@ add ca here
 clone this project in to `/etc/openvpn/`
 
 ```shell
-python create_openvpn.py -n name -d {user rule group name}
+python create_openvpn.py -n name
 ```
-
-Create user group rule template in `./template`
 
 Auto created user configuration in `./ovpn`
 
@@ -322,5 +193,5 @@ cd /usr/share/easy-rsa
 
 source ./vars
 
-./revoke-full ksc-name
+./revoke-full name
 ```

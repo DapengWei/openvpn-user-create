@@ -1,12 +1,11 @@
 client
-dev tun-home
+dev tun-client
 proto tcp
 remote <serverip> 1199
 resolv-retry infinite
 nobind
 persist-key
 persist-tun
-compress lzo
 
 cipher AES-256-GCM
 auth SHA512
