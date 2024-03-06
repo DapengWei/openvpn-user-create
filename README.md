@@ -84,7 +84,7 @@ ca /etc/openvpn/easy-rsa/pki/ca.crt
 cert /etc/openvpn/easy-rsa/pki/issued/wdphomevpn.crt
 key /etc/openvpn/easy-rsa/pki/private/wdphomevpn.key
 dh /etc/openvpn/easy-rsa/pki/dh.pem
-server 10.242.0.0 255.255.255.0
+server 10.240.0.0 255.255.255.0
 topology subnet
 ifconfig-pool-persist  /etc/openvpn/ipp.txt
 client-config-dir  /etc/openvpn/ccd
